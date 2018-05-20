@@ -1,0 +1,73 @@
+// Include Stepper library, which has functions to
+// turn an arbitrary # of steps and set rpm
+#include <Stepper.h>
+
+
+// Define the number of steps per rev of your
+// particular motor
+#define STEPS 513
+
+// Our platform will traverse ~10 cm per rotation
+// This makes dL about 0.2 mm
+
+
+// Instantiate a stepper, specifying STEPS and the
+// pins it's attached to
+Stepper stepper(STEPS, 4, 5, 6, 7);
+
+
+// Constants
+const int L = 838; // usable length of track (mm)
+const double dL = 0.2; // translation caused by one step (mm)
+const int MAX_STEPS = L/dL;
+const int res = 30; // resolution: # of steps to go
+                   // before updating speed
+
+// Motion Variables
+int E = 50; // Total energy of the system
+double U = 0; // Potential energy of the system
+double x = 0; // Current location of the platform
+int rpm = 0; // Initial speed of the system
+int dir = 1; // 1 = clockwise, -1 = counterclockwise
+
+
+// Laser Variables
+blinks = 0; // Random variable used to determine
+
+
+void setup() {
+  // Start serial for output
+  Serial.begin(9600);
+
+  // Set initial motor speed
+  stepper.setSpeed(40);
+
+  // Set pin 13 to output for laser
+  pinMode(13, OUTPUT);
+}
+
+
+void loop() {
+  stepper.step(res); //step 30 steps
+  
+  x += dL*res; // update position
+
+  // Calculate potential - normalize to range from 0 to 50 along length
+  //U = -x; // Uniform acceleration to right
+  //U = x; // Uniform acceleration to left
+  U = ((x-(L/2))^2)/3500; // Simple harmonic oscillator
+  //if (x >= L/3 && x <= 2*L/3) U = 1;
+  //else U = 0; // Step potential
+  //U = 1; // Uniform motion
+
+
+  rpm = (1/(60*dL*STEPS))*sqrt((E - U)/500);
+  stepper.setSpeed(rpm);
+
+  if (dir == 1 && x > L - 3)
+    dir *= -1;
+  if (dir == -1 && x < 3)
+    dir *= -1;
+
+
+}
